@@ -1,0 +1,164 @@
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
+public class CatalogSolution {
+    public static void main(String args[]) {
+
+        Map<String, Double> catalog = new HashMap<>();
+        catalog.put("Product A", 20.0);
+        catalog.put("Product B", 40.0);
+        catalog.put("Product C", 50.0);
+
+        // Create a scanner to read user input
+        Scanner scanner = new Scanner(System.in);
+
+        // Display the catalog to the user
+        System.out.println("Catalog:");
+        for (Map.Entry<String, Double> entry : catalog.entrySet()) {
+            System.out.println(entry.getKey() + " - $" + entry.getValue());
+        }
+
+        // Prompt the user for product selection and quantity
+        System.out.println("Enter the product name (or 'done' to finish):");
+        String productName = scanner.nextLine();
+
+        Map<String, Integer> productQuantityMap = new HashMap<>();
+        double total = 0.0;
+
+        while (!productName.equalsIgnoreCase("done")) {
+            if (!catalog.containsKey(productName)) {
+                System.out.println("Invalid product name. Please try again.");
+            } else {
+                System.out.println("Enter the quantity:");
+                int quantity = scanner.nextInt();
+                scanner.nextLine(); // consume the newline character
+
+                if (quantity <= 0) {
+                    System.out.println("Invalid quantity. Please try again.");
+                } else {
+                    double productPrice = catalog.get(productName);
+                    double productCost = productPrice * quantity;
+
+                    productQuantityMap.put(productName, quantity);
+                    total += productCost;
+
+                    System.out.println("Added " + quantity + " " + productName + "(s) to the cart.");
+                }
+            }
+
+            System.out.println("Enter the product name (or 'done' to finish):");
+            productName = scanner.nextLine();
+        }
+        
+        double subtotal= total;
+
+        // Apply discounts
+        double discountAmount = 0.0;
+        String discountName = "";
+
+        // Rule: flat_10_discount
+        if (total > 200) {
+            discountAmount = 10.0;
+            discountName = "flat_10_discount";
+        }
+
+        // Rule: bulk_5_discount
+        boolean bulk5DiscountApplicable = false;
+        for (Map.Entry<String, Integer> entry : productQuantityMap.entrySet()) {
+            if (entry.getValue() > 10) {
+                double productPrice = catalog.get(entry.getKey());
+                double productCost = productPrice * entry.getValue();
+                double discount = productCost * 0.05;
+                if (discount > discountAmount) {
+                    discountAmount = discount;
+                    discountName = "bulk_5_discount";
+                }
+                bulk5DiscountApplicable = true;
+            }
+        }
+
+        // Rule: bulk_10_discount
+        int totalQuantity = productQuantityMap.values().stream().mapToInt(Integer::intValue).sum();
+        boolean bulk10DiscountApplicable = totalQuantity > 20;
+        if (bulk10DiscountApplicable && !bulk5DiscountApplicable) {
+            double discount = total * 0.1;
+            if (discount > discountAmount) {
+                discountAmount = discount;
+                discountName = "bulk_10_discount";
+            }
+        }
+
+        // Rule: tiered_50_discount
+        boolean tieredDiscountApplicable = totalQuantity > 30;
+        boolean tiered50DiscountApplied = false;
+        for (Map.Entry<String, Integer> entry : productQuantityMap.entrySet()) {
+            if (tieredDiscountApplicable && entry.getValue() > 15) {
+                double productPrice = catalog.get(entry.getKey());
+                double productCost = productPrice * (entry.getValue() - 15);
+                double discount = productCost * 0.5;
+                if (discount > discountAmount) {
+                    discountAmount = discount;
+                    discountName = "tiered_50_discount";
+                }
+                tiered50DiscountApplied = true;
+            }
+        }
+
+        // Ask whether products need to be wrapped as gifts
+        System.out.println("Do you want to wrap any product(s) as gifts? (yes/no)");
+        String wrapGifts = scanner.nextLine();
+        double giftWrapFee = 0.0;
+
+        if (wrapGifts.equalsIgnoreCase("yes")) {
+            for (Map.Entry<String, Integer> entry : productQuantityMap.entrySet()) {
+                String product = entry.getKey();
+                int quantity = entry.getValue();
+
+                System.out.println("Enter the quantity of " + product + " to be wrapped as gifts:");
+                int giftQuantity = scanner.nextInt();
+                scanner.nextLine(); // consume the newline character
+
+                if (giftQuantity <= quantity && giftQuantity > 0) {
+                    giftWrapFee += giftQuantity * 1.0;
+                    System.out.println("Wrapped " + giftQuantity + " " + product + "(s) as gifts.");
+                } else {
+                    System.out.println("Invalid gift quantity. Skipping gift wrapping for " + product + ".");
+                }
+            }
+        }
+
+        // Apply gift wrap fee
+        total += giftWrapFee;
+
+        // Apply shipping fee
+        int totalPackages = (int) Math.ceil(totalQuantity / 10.0);
+        double shippingFee = totalPackages * 5.0;
+        total += shippingFee;
+
+        // Calculate the total cost
+        double totalCost = total - discountAmount;
+
+        // Display the order details
+        System.out.println("Order Details:");
+        for (Map.Entry<String, Integer> entry : productQuantityMap.entrySet()) {
+            String product = entry.getKey();
+            int quantity = entry.getValue();
+            double productPrice = catalog.get(product);
+            double productCost = productPrice * quantity;
+            System.out.println(product + " - Quantity: " + quantity + ", Total Amount: $" + productCost);
+        }
+
+        System.out.println("Subtotal: $" + subtotal);
+
+        if (!discountName.isEmpty()) {
+            System.out.println("Discount Applied: " + discountName + ", Amount: $" + discountAmount);
+        }
+        
+        System.out.println("Shipping Fee: $" + shippingFee);
+        System.out.println("Gift Wrap Fee: $" + giftWrapFee);
+
+
+        System.out.println("Total: $" + totalCost);
+    }
+}
